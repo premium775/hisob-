@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Smart Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; background: #08080a; color: white; padding: 20px; overflow: hidden;
+        }
+
+        /* FON EFFEKTI */
+        .glow {
+            position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0, 210, 255, 0.2), rgba(255, 0, 87, 0.1));
+            filter: blur(100px); z-index: -1; animation: move 20s infinite alternate;
+        }
+        @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
+
+        .dashboard {
+            display: flex; gap: 20px; width: 100%; max-width: 1250px; height: 650px;
+        }
+
+        /* 1. KALKULYATOR */
+        .glass {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px; padding: 20px;
+        }
+        .calc-panel { width: 300px; }
+        #display {
+            width: 100%; height: 60px; background: rgba(0,0,0,0.4);
+            border: none; border-radius: 15px; color: #00d2ff;
+            text-align: right; padding: 15px; font-size: 26px; margin-bottom: 15px;
+        }
+        .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button {
+            height: 50px; border-radius: 12px; border: none;
+            background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: 0.2s;
+        }
+        button:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .op { color: #ff0057; font-weight: bold; }
+        .eq { background: #00d2ff; color: #000; font-weight: bold; }
+
+        /* 2. AQLLI EXCEL BLOKNOT */
+        .excel-panel { flex: 2; display: flex; flex-direction: column; overflow: hidden; }
+        .split-box { display: flex; flex: 1; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.1); }
+        .input-side { flex: 2; padding: 15px; border-right: 1px solid rgba(255,255,255,0.1); }
+        .result-side { flex: 1; padding: 15px; background: rgba(0,0,0,0.2); color: #00d2ff; }
+        textarea {
+            width: 100%; height: 100%; background: transparent; border: none; outline: none;
+            color: #ddd; font-size: 18px; line-height: 2; resize: none;
+        }
+        .res-line { height: 36px; display: flex; align-items: center; font-weight: bold; }
+
+        /* 3. STICKY NOTE (YANGI SAHIFA) */
+        .sticky-panel { width: 250px; display: flex; flex-direction: column; }
+        .sticky-note {
+            width: 100%; height: 100%; background: rgba(255, 255, 0, 0.05);
+            border-left: 4px solid #ffcc00; padding: 15px; color: #ffcc00;
+        }
+
+        h3 { font-size: 12px; margin-bottom: 10px; opacity: 0.6; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+
+    <div class="dashboard">
+        <div class="glass calc-panel">
+            <h3>Calculator</h3>
+            <input type="text" id="display" disabled placeholder="0">
+            <div class="buttons">
+                <button class="op" onclick="cClear()">C</button>
+                <button class="op" onclick="cIn('/')">/</button>
+                <button class="op" onclick="cIn('*')">×</button>
+                <button class="op" onclick="cBack()">⌫</button>
+                <button id="k7" onclick="cIn('7')">7</button>
+                <button id="k8" onclick="cIn('8')">8</button>
+                <button id="k9" onclick="cIn('9')">9</button>
+                <button class="op" id="k-" onclick="cIn('-')">-</button>
+                <button id="k4" onclick="cIn('4')">4</button>
+                <button id="k5" onclick="cIn('5')">5</button>
+                <button id="k6" onclick="cIn('6')">6</button>
+                <button class="op" id="k+" onclick="cIn('+')">+</button>
+                <button id="k1" onclick="cIn('1')">1</button>
+                <button id="k2" onclick="cIn('2')">2</button>
+                <button id="k3" onclick="cIn('3')">3</button>
+                <button class="eq" id="kEnter" onclick="cEqual()">=</button>
+                <button id="k0" onclick="cIn('0')" style="grid-column: span 2;">0</button>
+                <button id="k." onclick="cIn('.')">.</button>
+            </div>
+        </div>
+
+        <div class="glass excel-panel">
+            <h3>Smart Calculation Notes</h3>
+            <div class="split-box">
+                <div class="input-side">
+                    <textarea id="excel-input" placeholder="Masalan: 5 * 25000"></textarea>
+                </div>
+                <div class="result-side" id="excel-results"></div>
+            </div>
+        </div>
+
+        <div class="glass sticky-panel">
+            <h3>Quick Notes</h3>
+            <textarea id="sticky-input" class="sticky-note" placeholder="Muhim eslatmalar..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // 1. Kalkulyator funksiyalari
+        const disp = document.getElementById('display');
+        function cIn(v) { disp.value += v; }
+        function cClear() { disp.value = ''; }
+        function cBack() { disp.value = disp.value.slice(0,-1); }
+        function cEqual() { try { disp.value = eval(disp.value); } catch { disp.value = 'Error'; } }
+
+        // KLAVIATURA ULASH
+        document.addEventListener('keydown', (e) => {
+            // Agar foydalanuvchi bloknotlarda yozayotgan bo'lsa kalkulyator ishlamaydi
+            if (document.activeElement.tagName === 'TEXTAREA') return;
+
+            const key = e.key;
+            if (/[0-9]/.test(key)) cIn(key);
+            if (['+', '-', '*', '/'].includes(key)) cIn(key);
+            if (key === '.') cIn('.');
+            if (key === 'Enter') { e.preventDefault(); cEqual(); }
+            if (key === 'Backspace') cBack();
+            if (key === 'Escape') cClear();
+        });
+
+        // 2. Smart Excel Bloknot & 3. Sticky Note
+        const exInput = document.getElementById('excel-input');
+        const exRes = document.getElementById('excel-results');
+        const stInput = document.getElementById('sticky-input');
+
+        // Ma'lumotlarni yuklash
+        window.onload = () => {
+            exInput.value = localStorage.getItem('exData') || "";
+            stInput.value = localStorage.getItem('stData') || "";
+            updateExcel();
+        };
+
+        // Excel mantiqi
+        exInput.addEventListener('input', () => {
+            updateExcel();
+            localStorage.setItem('exData', exInput.value);
+        });
+
+        // Sticky Note saqlash
+        stInput.addEventListener('input', () => {
+            localStorage.setItem('stData', stInput.value);
+        });
+
+        function updateExcel() {
+            const lines = exInput.value.split('\n');
+            exRes.innerHTML = '';
+            lines.forEach(line => {
+                let resText = '';
+                let clean = line.replace(/[^0-9+\-*/().]/g, ' ').trim();
+                if (clean) {
+                    try {
+                        let val = eval(clean);
+                        if (val !== undefined && !isNaN(val) && typeof val === 'number') {
+                            resText = '= ' + val.toLocaleString();
+                        }
+                    } catch {}
+                }
+                const div = document.createElement('div');
+                div.className = 'res-line';
+                div.innerText = resText;
+                exRes.appendChild(div);
+            });
+        }
+
+        // Sinxron scroll
+        exInput.addEventListener('scroll', () => {
+            exRes.scrollTop = exInput.scrollTop;
+        });
+    </script>
+</body>
+</html>
